@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学习小管家 V6｜今日学习计划</title>
+<style>
+:root{--ink:#263247;--muted:#718096;--line:#e5eaf1;--bg:#f4f7fb;--blue:#4778d0;--blue2:#eaf1ff;--green:#26966d;--red:#d45e5e;--amber:#d18b32}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:linear-gradient(120deg,#315da8,#658bd0);color:white;padding:26px 20px}
+.wrap{max-width:1050px;margin:auto;padding:0 16px}h1{font-size:25px;margin:0 0 5px}header p{margin:0;opacity:.9}
+main{padding:22px 0 50px}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 5px 20px #23395b08;margin-bottom:18px}
+h2{font-size:18px;margin:0 0 14px}.sub{color:var(--muted);font-size:13px;margin-top:-8px;margin-bottom:14px}
+label{display:block;font-size:13px;color:#536176;margin:9px 0 5px}input,select,textarea{width:100%;border:1px solid #d9e1ec;border-radius:9px;padding:10px 11px;font:inherit;background:white;color:var(--ink)}textarea{min-height:66px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--blue);color:white;font-weight:600;cursor:pointer}.btn.secondary{background:var(--blue2);color:#315da8}.btn.green{background:var(--green)}.btn.red{background:#fff0f0;color:var(--red)}.btn.small{padding:6px 10px;font-size:12px}.btn:disabled{opacity:.5;cursor:not-allowed}
+.card{border:1px solid var(--line);border-radius:12px;padding:13px;margin:10px 0;background:#fff}.cardtop{display:flex;justify-content:space-between;gap:10px;align-items:center}.tag{font-size:12px;color:#4569a7;background:#edf3ff;border-radius:20px;padding:3px 9px}.muted{color:var(--muted);font-size:13px}.previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.previews img{width:76px;height:76px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.task{display:flex;align-items:flex-start;gap:10px}.task input[type=checkbox]{width:19px;height:19px;margin-top:4px;accent-color:var(--green)}.taskbody{flex:1;min-width:0}.task.done .tasktitle{text-decoration:line-through;color:#8993a3}.tasktitle{font-weight:650}.taskmeta{font-size:12px;color:var(--muted);margin-top:3px}.taskactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.timer{text-align:center;padding:16px 8px}.time{font-size:54px;font-weight:750;letter-spacing:2px;font-variant-numeric:tabular-nums}.mode{color:var(--muted);margin-bottom:4px}.timerbuttons{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#f6f8fc;border-radius:10px;padding:12px;text-align:center}.stat strong{font-size:22px;display:block}.stat span{font-size:12px;color:var(--muted)}
+.progress{height:8px;background:#edf0f5;border-radius:20px;overflow:hidden;margin:10px 0}.progress i{display:block;height:100%;background:var(--green);width:0}
+.notice{background:#fff8e9;color:#795c2c;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+dialog{border:0;border-radius:14px;padding:20px;max-width:420px;width:calc(100% - 30px);box-shadow:0 15px 60px #0003}dialog::backdrop{background:#17243b66}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:10px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.time{font-size:46px}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>📚 学习小管家</h1><p>把任务拆小一点，专注完成每一步。</p></div></header>
+<main class="wrap">
+<div class="grid">
+<section>
+<div class="panel">
+<h2>➕ 添加今日作业</h2>
+<p class="sub">每项作业单独建立卡片；可为每项选择多张作业照片。</p>
+<div id="drafts"></div>
+<button class="btn secondary" id="addDraft">＋ 新增一项作业卡片</button>
+<div class="notice">照片目前用于上传预览，网页尚未接入自动 AI 识题。可先在 ChatGPT 中识别，再把建议时间填入卡片。</div>
+</div>
+<div class="panel">
+<div class="cardtop"><h2>📝 今日任务清单</h2><span class="tag" id="taskCount">0 项任务</span></div>
+<div class="progress"><i id="progressBar"></i></div>
+<div class="muted" id="progressText">完成 0 / 0</div>
+<div id="tasks"><p class="muted">还没有任务，先添加一项作业吧。</p></div>
+</div>
+</section>
+<aside>
+<div class="panel">
+<h2>🍅 番茄专注钟</h2>
+<div class="timer">
+<div class="mode" id="timerMode">专注时间</div><div class="time" id="clock">25:00</div>
+<div class="muted" id="timerHint">专注 25 分钟，休息 5 分钟</div>
+<div class="timerbuttons"><button class="btn" id="startBtn">开始</button><button class="btn secondary" id="pauseBtn">暂停</button><button class="btn secondary" id="resetBtn">重置</button></div>
+<div class="timerbuttons"><button class="btn secondary small" data-mode="focus">专注 25 分</button><button class="btn secondary small" data-mode="short">短休 5 分</button><button class="btn secondary small" data-mode="long">长休 15 分</button></div>
+</div>
+</div>
+<div class="panel">
+<h2>📊 今日学习统计</h2>
+<div class="stats">
+<div class="stat"><strong id="doneStat">0</strong><span>完成任务</span></div>
+<div class="stat"><strong id="actualStat">0</strong><span>实际用时（分）</span></div>
+<div class="stat"><strong id="estimateStat">0</strong><span>剩余估时（分）</span></div>
+</div>
+<p class="muted" style="margin:13px 0 0">完成任务后可记录实际用时，系统会据此调整未完成任务的时间预估。</p>
+<button class="btn secondary" id="exportBtn" style="margin-top:12px">导出今日记录 CSV</button>
+</div>
+<div class="panel">
+<h2>⏱️ 动态时间调整</h2>
+<p class="muted">系统根据已完成任务的实际速度，估算剩余任务所需时间。你可以查看建议，也可以手动修改。</p>
+<div id="estimateBox" class="muted">添加任务并记录实际用时后，这里会显示动态估时。</div>
+</div>
+</aside>
+</div>
+</main>
+<footer>数据保存在当前浏览器中（localStorage）。更换浏览器或清除网站数据后，记录可能无法保留。</footer>
+<dialog id="actualDialog">
+<h2>记录实际完成时间</h2><p class="muted" id="actualTaskName"></p>
+<label>实际用时（分钟）</label><input type="number" id="actualInput" min="1" step="1">
+<div style="display:flex;gap:8px;margin-top:16px"><button class="btn green" id="saveActual">保存并完成</button><button class="btn secondary" id="cancelActual">取消</button></div>
+</dialog>
+<script>
+const $=s=>document.querySelector(s);
+let tasks=JSON.parse(localStorage.getItem('study_tasks_v4')||'[]');
+let draftNo=0,activeTask=null,remaining=1500,mode='focus',timerId=null,startedAt=0;
+const modes={focus:{seconds:1500,name:'专注时间',hint:'专注 25 分钟，休息 5 分钟'},short:{seconds:300,name:'短休息',hint:'放松 5 分钟，再开始下一轮'},long:{seconds:900,name:'长休息',hint:'休息 15 分钟，恢复精力'}};
+function persist(){localStorage.setItem('study_tasks_v4',JSON.stringify(tasks));}
+function makeDraft(){
+ const id=++draftNo,div=document.createElement('div');div.className='card draft';div.dataset.id=id;
+ div.innerHTML=`<div class="cardtop"><strong>作业卡片 ${id}</strong><button class="btn red small removeDraft">移除</button></div>
+ <label>选择作业照片（支持一次多选，可同时上传多张）</label><input type="file" class="photos" accept="image/*" multiple>
+ <div class="muted photoCount">尚未选择照片</div><div class="previews"></div>
+ <div class="row"><div><label>科目</label><select class="subject"><option>数学</option><option>英语</option><option>语文</option><option>科学</option><option>其他</option></select></div><div><label>作业内容 / 题型</label><input class="content" placeholder="例如：计算题、阅读理解"></div></div>
+ <div class="row"><div><label>预计答题时间（分钟）</label><input class="answer" type="number" min="0" value="25"></div><div><label>预计检查时间（分钟）</label><input class="check" type="number" min="0" value="5"></div></div>
+ <button class="btn addTask" style="margin-top:12px">添加这一项作业</button>`;
+ $('#drafts').appendChild(div);
+ div.querySelector('.removeDraft').onclick=()=>div.remove();
+ div.querySelector('.photos').onchange=e=>{const box=div.querySelector('.previews');box.innerHTML='';const files=[...e.target.files];div.querySelector('.photoCount').textContent=files.length?`已选择 ${files.length} 张照片`:'尚未选择照片';files.forEach(f=>{const img=document.createElement('img');img.src=URL.createObjectURL(f);img.alt=f.name;img.title=f.name;box.appendChild(img);});};
+ div.querySelector('.addTask').onclick=()=>{
+ const content=div.querySelector('.content').value.trim(),answer=Number(div.querySelector('.answer').value)||0,check=Number(div.querySelector('.check').value)||0;
+ if(!content){alert('请填写作业内容或题型。');return;}
+ tasks.push({id:Date.now()+Math.random(),subject:div.querySelector('.subject').value,content,estimate:answer+check,answer,check,done:false,actual:null,created:new Date().toISOString()});
+ persist();render();div.remove();
+ };
+}
+function render(){
+ const box=$('#tasks');box.innerHTML='';
+ if(!tasks.length)box.innerHTML='<p class="muted">还没有任务，先添加一项作业吧。</p>';
+ tasks.forEach(t=>{
+ const el=document.createElement('div');el.className='card task'+(t.done?' done':'');
+ el.innerHTML=`<input type="checkbox" ${t.done?'checked':''} aria-label="完成任务"><div class="taskbody"><div class="cardtop"><div class="tasktitle">${esc(t.subject)}｜${esc(t.content)}</div><span class="tag">${t.done?'已完成':'待完成'}</span></div><div class="taskmeta">预计 ${t.estimate} 分钟（答题 ${t.answer} + 检查 ${t.check}）${t.actual!==null?' · 实际 '+t.actual+' 分钟':''}</div><div class="taskactions"><button class="btn secondary small edit">修改估时</button><button class="btn secondary small record">${t.done?'修改实际用时':'记录实际用时并完成'}</button><button class="btn red small delete">删除</button></div></div>`;
+ el.querySelector('input').onchange=e=>{if(e.target.checked){openActual(t.id);}else{t.done=false;t.actual=null;persist();render();}};
+ el.querySelector('.record').onclick=()=>openActual(t.id);
+ el.querySelector('.edit').onclick=()=>{const v=prompt('请输入新的总预计时间（分钟）',t.estimate);if(v!==null&&Number(v)>=0){t.estimate=Number(v);t.answer=Number(v);t.check=0;persist();render();}};
+ el.querySelector('.delete').onclick=()=>{if(confirm('确定删除这项任务？')){tasks=tasks.filter(x=>x.id!==t.id);persist();render();}};
+ box.appendChild(el);
+ });
+ const done=tasks.filter(t=>t.done).length,actual=tasks.filter(t=>t.actual!==null).reduce((s,t)=>s+t.actual,0),remainingEst=tasks.filter(t=>!t.done).reduce((s,t)=>s+t.estimate,0);
+ $('#taskCount').textContent=tasks.length+' 项任务';$('#progressText').textContent=`完成 ${done} / ${tasks.length}`;$('#progressBar').style.width=(tasks.length?done/tasks.length*100:0)+'%';
+ $('#doneStat').textContent=done;$('#actualStat').textContent=actual;$('#estimateStat').textContent=remainingEst;
+ const measured=tasks.filter(t=>t.actual!==null&&t.estimate>0),ratio=measured.length?measured.reduce((s,t)=>s+t.actual/t.estimate,0)/measured.length:null;
+ if(ratio===null)$('#estimateBox').textContent='添加任务并记录实际用时后，这里会显示动态估时。';
+ else {const base=tasks.filter(t=>!t.done).reduce((s,t)=>s+t.estimate,0),suggest=Math.max(0,Math.round(base*ratio));$('#estimateBox').innerHTML=`根据已记录的 ${measured.length} 项任务，当前实际用时约为原估时的 <b>${Math.round(ratio*100)}%</b>。<br>剩余任务原估时：${base} 分钟；建议调整为：<b>${suggest} 分钟</b>。<br><button class="btn secondary small" id="applyEstimate" style="margin-top:8px">应用建议到剩余任务</button>`;$('#applyEstimate').onclick=()=>{const pending=tasks.filter(t=>!t.done);if(!pending.length)return;const old=pending.reduce((s,t)=>s+t.estimate,0);pending.forEach(t=>{t.estimate=old?Math.max(1,Math.round(t.estimate*suggest/old)):t.estimate;});persist();render();};}
+}
+function openActual(id){activeTask=id;const t=tasks.find(x=>x.id===id);$('#actualTaskName').textContent=t.subject+'｜'+t.content;$('#actualInput').value=t.actual??t.estimate;$('#actualDialog').showModal();}
+$('#saveActual').onclick=()=>{const n=Number($('#actualInput').value);if(!Number.isFinite(n)||n<=0){alert('请输入大于 0 的分钟数。');return;}const t=tasks.find(x=>x.id===activeTask);t.actual=n;t.done=true;persist();$('#actualDialog').close();render();};
+$('#cancelActual').onclick=()=>$('#actualDialog').close();
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function showClock(){const m=Math.floor(remaining/60),s=remaining%60;$('#clock').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');$('#timerMode').textContent=modes[mode].name;$('#timerHint').textContent=modes[mode].hint;}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null;}}
+function tick(){remaining--;showClock();if(remaining<=0){stopTimer();if(mode==='focus'){mode='short';remaining=modes.short.seconds;}else{mode='focus';remaining=modes.focus.seconds;}showClock();alert('这一阶段完成啦！记得喝水、活动一下。');}}
+$('#startBtn').onclick=()=>{if(timerId)return;timerId=setInterval(tick,1000);};
+$('#pauseBtn').onclick=stopTimer;
+$('#resetBtn').onclick=()=>{stopTimer();remaining=modes[mode].seconds;showClock();};
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{stopTimer();mode=b.dataset.mode;remaining=modes[mode].seconds;showClock();});
+$('#addDraft').onclick=makeDraft;
+$('#exportBtn').onclick=()=>{const rows=[['科目','作业内容','预计分钟','实际分钟','状态'],...tasks.map(t=>[t.subject,t.content,t.estimate,t.actual??'',t.done?'完成':'未完成'])];const csv='\uFEFF'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='今日学习记录.csv';a.click();URL.revokeObjectURL(a.href);};
+makeDraft();render();showClock();
+</script>
+</body></html>
